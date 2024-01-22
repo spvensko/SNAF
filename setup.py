@@ -10,7 +10,7 @@ requires = [
     'tensorflow==2.3.0',
     'pandas==1.3.4',
     'numpy==1.18.5',
-    'numba==0.53.0',
+    'numba==0.58.0',
     'mhcflurry==2.0.5',
     'h5py==2.10.0',
     'anndata==0.7.6',
