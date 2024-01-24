@@ -15,17 +15,11 @@ RUN cd /usr/src/app \
     && python AltAnalyze.py --species Hs --update Official --version EnsMart91 --additional all \
     && cd .. \
     && curl -o Hs.bed https://raw.githubusercontent.com/frankligy/SNAF/main/AltAnalyze/Hs.bed \
-    && mv ./Hs.bed ./altanalyze/AltDatabase/EnsMart91/ensembl/Hs \
-    && curl -o prune.py https://raw.githubusercontent.com/frankligy/SNAF/main/AltAnalyze/prune.py \
-    && chmod 777 /usr/src/app/prune.py \
-    && curl -o AltAnalyze.sh https://raw.githubusercontent.com/frankligy/SNAF/main/AltAnalyze/AltAnalyze.sh \
-    && chmod 777 /usr/src/app/AltAnalyze.sh \
+    && mv ./Hs.bed ./altanalyze/AltDatabase/EnsMart91/ensembl/Hs
+COPY prune.py /usr/src/app/prune.py
+RUN chmod 777 /usr/src/app/prune.py
+COPY AltAnalyze.sh /usr/src/app/AltAnalyze.sh
+RUN chmod 777 /usr/src/app/AltAnalyze.sh \
     && chmod -R 777 /usr/src/app/altanalyze 
 
 ENTRYPOINT ["/usr/src/app/AltAnalyze.sh"]  # must double quote
-
-
-
-
-
-
