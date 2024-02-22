@@ -17,6 +17,10 @@ import atexit
 
 @atexit.register
 def clear_assets():
+    if not(os.path.exists(os.path.join(os.path.dirname(os.getcwd()),'assets'))):
+        # create an assets folder                                                                       
+        assets_dir = os.path.join(os.path.dirname(os.getcwd()),'assets')                                
+        os.mkdir(assets_dir)
     imgs = os.listdir('assets')
     for img in imgs:
         os.remove(os.path.join('assets',img))

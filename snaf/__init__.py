@@ -53,8 +53,8 @@ def initialize(df,db_dir,gtex_mode='count',software_path=None,binding_method=Non
     gtex_viewer_configuration(adata)
     print('{} {} finishing initialization'.format(date.today(),datetime.now().strftime('%H:%M:%S')))
 
-    # create a scratch folder
-    scratch_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'scratch')
+    # create a scratch folder                                                                       
+    scratch_dir = os.path.join(os.getcwd(),'scratch') 
     if not os.path.exists(scratch_dir):
         os.mkdir(scratch_dir)
 

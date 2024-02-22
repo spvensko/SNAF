@@ -1,12 +1,12 @@
-FROM ubuntu:23.04
+FROM ubuntu:20.04
 
 RUN apt-get update -y && apt-get upgrade -y
 RUN apt-get install -y python3 python3-pip git
 
-RUN rm /usr/lib/python3.11/EXTERNALLY-MANAGED
 RUN pip install --upgrade pip
-RUN pip install cython==3.0.8
+RUN pip install --break-system-packages tensorflow cython==3.0.8 pandas numpy==1.22 anndata matplotlib
+RUN pip install protobuf==3.20.*
+COPY SNAF-0.7.0-py3-none-any.whl /
+RUN pip install /SNAF-0.7.0-py3-none-any.whl
 
-RUN git clone https://github.com/spvensko/SNAF.git
-WORKDIR SNAF
-RUN python3 setup.py build_ext --inplace
+ENV NUMBA_CACHE_DIR=/tmp

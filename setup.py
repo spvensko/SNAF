@@ -7,11 +7,12 @@ long_description = '\n\n'.join([open(os.path.join(base_dir,'README.md'),'r').rea
 
 # requires
 requires = [
-    'tensorflow==2.3.0',
+    'tensorflow',
     'pandas==1.3.4',
-    'numpy==1.18.5',
+    'numpy==1.22',
     'numba==0.58.0',
     'mhcflurry==2.0.5',
+    'mhcgnomes==1.7.0',
     'h5py==2.10.0',
     'anndata==0.7.6',
     'seaborn==0.11.2',

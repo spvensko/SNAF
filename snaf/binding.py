@@ -40,7 +40,10 @@ part I: using netMHCpan4.1b
 def run_netMHCpan(software_path,peptides,hlas,length,cmd_num=1,tmp_dir=None,tmp_name=None):
     # set the default
     if tmp_dir is None:
-        tmp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'scratch')
+#        tmp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'scratch')
+        tmp_dir = os.path.join(os.getcwd(),'scratch')
+        if not(os.path.exists(tmp_dir)):
+          os.mkdir(tmp_dir)
     if tmp_name is None:
         tmp_name = 'input_{}.pep'.format(os.getpid())
     # reformat/create to the strings that we need
@@ -63,11 +66,11 @@ def run_netMHCpan(software_path,peptides,hlas,length,cmd_num=1,tmp_dir=None,tmp_
             '''
             ../external/netMHCpan-4.1/netMHCpan -p ./test.pep -a HLA-A01:01,HLA-A02:01 -l 9 | grep 'AAAWYLWEV\|AAGLQDCTM\|AARNIVRRA' | awk 'BEGIN {OFS = "\t"} {print $3, length($3),$2,$13, $15}'
             '''
-        try:
-            df = pd.read_csv(StringIO(subprocess.run(cmd,shell=True,capture_output=True).stdout.decode('utf-8')),sep='\t',header=None)
-            df.columns = ['peptide','mer','hla','score','identity']
-        except:   # no stdout, just no candidates
-            df = pd.DataFrame(columns=['peptide','mer','hla','score','identity'])
+#        try:
+        df = pd.read_csv(StringIO(subprocess.run(cmd,shell=True,capture_output=True).stdout.decode('utf-8')),sep='\t',header=None)
+        df.columns = ['peptide','mer','hla','score','identity']
+#        except:   # no stdout, just no candidates
+#        df = pd.DataFrame(columns=['peptide','mer','hla','score','identity'])
 
 
     else:
@@ -115,11 +118,11 @@ def run_MHCflurry(peptides,hlas):
     for index,mhc_ in enumerate(hlas):
         tmp_dic_for_alleles['sample{}'.format(index)] = [mhc_]
     from mhcflurry import Class1PresentationPredictor
-    try:
-        predictor = Class1PresentationPredictor.load()   # very time consuming
-    except:
-        cmd = 'mhcflurry-downloads fetch models_class1_presentation'
-        subprocess.run(cmd,shell=True)
+#    try:
+    predictor = Class1PresentationPredictor.load()   # very time consuming
+#    except:
+#        cmd = 'mhcflurry-downloads fetch models_class1_presentation'
+#        subprocess.run(cmd,shell=True)
     result = predictor.predict(peptides=peptides,alleles=tmp_dic_for_alleles,verbose=0) 
     df = result.loc[:,['peptide','best_allele','presentation_percentile']]
     df['mer'] = [len(item) for item in df['peptide']]
