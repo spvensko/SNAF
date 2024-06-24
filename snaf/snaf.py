@@ -1053,7 +1053,7 @@ class NeoJunction():
                 if strict and len(evidences)==0:  # in strict mode, without start_codon evidence, let's skip this phase
                     continue
                 de_facto_first = first[phase:]
-                pep_dict = get_peptides(de_facto_first,second,ks,phase,evidences)   # (pep,extra,n_from_first,phase,evidences)
+                pep_dict = get_peptides(de_facto_first,second,ks,phase,evidences,coord)   # (pep,extra,n_from_first,phase,evidences)
                 for k in ks:  
                     peptides[k].extend(pep_dict[k])
                     peptides[k] = list(set(peptides[k]))
@@ -1189,7 +1189,7 @@ def hla_formatting(pre,pre_type,post_type):
 
 
 
-def get_peptides(de_facto_first,second,ks,phase,evidences):
+def get_peptides(de_facto_first,second,ks,phase,evidences,coord):
     peptides = {k:[] for k in ks}
     extra = len(de_facto_first) % 3  # how many base left in first assuming no stop condon in front of it.
     num = len(de_facto_first) // 3   # how many set of codons in the first.
@@ -1224,8 +1224,28 @@ def get_peptides(de_facto_first,second,ks,phase,evidences):
                     if n_from_first <= first_most:
                         if n_from_first > 0:
                             pep = aa_first[-n_from_first:] + aa_second[:n_from_second]
+                            pep_context = aa_first[-n_from_first - 5:] + aa_second[:n_from_second + 10]
                         elif n_from_first == 0:
                             pep = aa_second[:n_from_second]
+                            pep_context = aa_second[:n_from_second + 10]
+                        print("n_from_first: {}".format(n_from_first))
+                        print("n_from_second: {}".format(n_from_second))
+                        cds1 = str(Seq(de_facto_first))[len(de_facto_first) - len(pep)*3 - n_from_first*3:]
+                        cds2 = str(Seq(continue_second))[:len(pep)*3 + n_from_second*3]
+                        raw_cds = cds1 + cds2
+                        actl_cds = ''
+                        for i in range(len(raw_cds) - (len(pep)*3)): 
+                            for j in [0, 1, 2]:
+                                ptntl_cds = raw_cds[j+i:j+i+len(pep)*3+1]
+                                tslt_cds = str(Seq(ptntl_cds).translate(to_stop=True))
+                                if str(Seq(ptntl_cds).translate(to_stop=True)) == pep:
+                                    print("Found actual coding cds...")
+                                    actl_cds = ptntl_cds
+                        # Still can't get all of the correct coding sequences,
+                        # but for now, going to focus on getting the successful
+                        # ones into the output file.
+                        with open('snaf_intermediates.tsv', 'a') as ofo:
+                            ofo.write("{},{},{},{}\n".format(coord, pep, actl_cds, pep_context))
                         peptides[k].append((pep,extra,n_from_first,phase,evidences))
     return peptides
                         
