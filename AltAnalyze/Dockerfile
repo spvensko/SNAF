@@ -23,13 +23,12 @@ RUN sed -i 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' /
 
 RUN apt-get clean \
     && apt-get update \
-    && apt-get install -y parallel \
+    && apt-get install -y parallel libxml2-dev zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install AltAnalyze and its dependencies
 RUN cd /usr/src/app \
     && curl -o requirements.txt https://raw.githubusercontent.com/frankligy/SNAF/main/AltAnalyze/requirements_slim_test.txt \
-    && apt-get install -y libigraph0-dev \
     && pip install python-igraph==0.7.1.post6 \
     && pip install --no-cache-dir -r requirements.txt \
     && git clone https://github.com/nsalomonis/altanalyze.git \
