@@ -1,9 +1,16 @@
 #!/bin/bash
 
+# Species configuration: set SPECIES_PREFIX=Hs (human) or Mm (mouse)
+# Set SPECIES_PREFIX and ENSMART_VERSION env vars before calling this script
+# For human: SPECIES_PREFIX=Hs, ENSMART_VERSION=EnsMart91 (default)
+# For mouse: SPECIES_PREFIX=Mm, ENSMART_VERSION=EnsMart100
+SPECIES_PREFIX="${SPECIES_PREFIX:-Hs}"
+ENSMART_VERSION="${ENSMART_VERSION:-EnsMart91}"
 
 # process the command-line arguments
 cd /mnt
 echo "Current folder is "$PWD
+echo "Species prefix: ${SPECIES_PREFIX}, EnsMart version: ${ENSMART_VERSION}"
 mode=$1
 
 if [ "$mode" == "bam_to_bed" ]; then
@@ -40,11 +47,11 @@ if [ "$mode" == "bam_to_bed" ]; then
     
     echo "start to get junction bed"
     python /usr/src/app/altanalyze/import_scripts/BAMtoJunctionBED.py --i $1 \
-        --species Hs --r /usr/src/app/altanalyze/AltDatabase/EnsMart91/ensembl/Hs/Hs_Ensembl_exon.txt
+        --species ${SPECIES_PREFIX} --r /usr/src/app/altanalyze/AltDatabase/${ENSMART_VERSION}/ensembl/${SPECIES_PREFIX}/${SPECIES_PREFIX}_Ensembl_exon.txt
 
     echo "start to get exon bed"
     python /usr/src/app/altanalyze/import_scripts/BAMtoExonBED.py --i $1  \
-        --r /usr/src/app/altanalyze/AltDatabase/EnsMart91/ensembl/Hs/Hs.bed --s Hs  
+        --r /usr/src/app/altanalyze/AltDatabase/${ENSMART_VERSION}/ensembl/${SPECIES_PREFIX}/${SPECIES_PREFIX}.bed --s ${SPECIES_PREFIX}  
 
     return 0
     }  
@@ -81,7 +88,7 @@ elif [ "$mode" == "bed_to_junction" ]; then
     echo -e '1\t2' > altanalyze_output/ExpressionInput/comps.${task}.txt
 
     ### run multipath-psi
-    python /usr/src/app/altanalyze/AltAnalyze.py --species Hs --platform RNASeq --version EnsMart91 \
+    python /usr/src/app/altanalyze/AltAnalyze.py --species ${SPECIES_PREFIX} --platform RNASeq --version ${ENSMART_VERSION} \
         --bedDir ${bed_folder} \
         --output /mnt/altanalyze_output \
         --groupdir /mnt/altanalyze_output/ExpressionInput/groups.${task}.txt \
@@ -100,12 +107,12 @@ elif [ "$mode" == "identify" ]; then
     
     echo "start to get junction bed"
     python /usr/src/app/altanalyze/import_scripts/BAMtoJunctionBED.py --i ${g_bam_folder}/$1 \
-        --species Hs --r /usr/src/app/altanalyze/AltDatabase/EnsMart91/ensembl/Hs/Hs_Ensembl_exon.txt
+        --species ${SPECIES_PREFIX} --r /usr/src/app/altanalyze/AltDatabase/${ENSMART_VERSION}/ensembl/${SPECIES_PREFIX}/${SPECIES_PREFIX}_Ensembl_exon.txt
 
     echo "start to get exon bed"
     bam_folder=/mnt/bam
     python /usr/src/app/altanalyze/import_scripts/BAMtoExonBED.py --i ${g_bam_folder}/$1  \
-        --r /usr/src/app/altanalyze/AltDatabase/EnsMart91/ensembl/Hs/Hs.bed --s Hs  
+        --r /usr/src/app/altanalyze/AltDatabase/${ENSMART_VERSION}/ensembl/${SPECIES_PREFIX}/${SPECIES_PREFIX}.bed --s ${SPECIES_PREFIX}  
 
     return 0
     }
@@ -155,7 +162,7 @@ elif [ "$mode" == "identify" ]; then
     echo -e '1\t2' > altanalyze_output/ExpressionInput/comps.${task}.txt
 
     ### run multipath-psi
-    python /usr/src/app/altanalyze/AltAnalyze.py --species Hs --platform RNASeq --version EnsMart91 \
+    python /usr/src/app/altanalyze/AltAnalyze.py --species ${SPECIES_PREFIX} --platform RNASeq --version ${ENSMART_VERSION} \
         --bedDir /mnt/bed \
         --output /mnt/altanalyze_output \
         --groupdir /mnt/altanalyze_output/ExpressionInput/groups.${task}.txt \
@@ -168,7 +175,7 @@ elif [ "$mode" == "identify" ]; then
 
 # DE 
 elif [ "$mode" == "DE" ]; then
-    python /usr/src/app/altanalyze/stats_scripts/metaDataAnalysis.py --p RNASeq --s Hs --adjp yes --pval 1 --f 1 \
+    python /usr/src/app/altanalyze/stats_scripts/metaDataAnalysis.py --p RNASeq --s ${SPECIES_PREFIX} --adjp yes --pval 1 --f 1 \
            --i ${output_folder}/ExpressionInput/exp.original-steady-state.txt \
            --m ${group_file}
 
@@ -176,13 +183,13 @@ elif [ "$mode" == "DE" ]; then
 elif [ "$mode" == "GO" ]; then
     # BioMarkers
     mkdir /mnt/GO_Elite_result_BioMarkers
-    python /usr/src/app/altanalyze/GO_Elite.py --species Hs --mod Ensembl --pval 0.05 --num 3 \
+    python /usr/src/app/altanalyze/GO_Elite.py --species ${SPECIES_PREFIX} --mod Ensembl --pval 0.05 --num 3 \
         --input ${gene_list_file} \
         --output /mnt/GO_Elite_result_BioMarkers --dataToAnalyze BioMarkers
 
     # GO
     mkdir /mnt/GO_Elite_result_GeneOntology
-    python /usr/src/app/altanalyze/GO_Elite.py --species Hs --mod Ensembl --pval 0.05 --num 3 \
+    python /usr/src/app/altanalyze/GO_Elite.py --species ${SPECIES_PREFIX} --mod Ensembl --pval 0.05 --num 3 \
         --input ${gene_list_file} \
         --output /mnt/GO_Elite_result_GeneOntology --dataToAnalyze GeneOntology
 
@@ -190,7 +197,7 @@ elif [ "$mode" == "GO" ]; then
 # DAS
 elif [ "$mode" == 'DAS' ]; then
     python /usr/src/app/altanalyze/stats_scripts/metaDataAnalysis.py --p PSI --dPSI 0 --pval 1 --adjp no \
-        --i ${output_folder}/AltResults/AlternativeOutput/Hs_RNASeq_top_alt_junctions-PSI_EventAnnotation.txt \
+        --i ${output_folder}/AltResults/AlternativeOutput/${SPECIES_PREFIX}_RNASeq_top_alt_junctions-PSI_EventAnnotation.txt \
         --m ${group_file}
 
 fi
