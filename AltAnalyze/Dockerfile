@@ -23,8 +23,18 @@ RUN sed -i 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' /
 
 RUN apt-get clean \
     && apt-get update \
-    && apt-get install -y parallel libxml2-dev zlib1g-dev \
+    && apt-get install -y parallel libxml2-dev zlib1g-dev build-essential pkg-config \
     && rm -rf /var/lib/apt/lists/*
+
+# Build igraph C core from source (libigraph0-dev not available in Buster archive)
+RUN curl -L https://github.com/igraph/igraph/releases/download/0.7.1/igraph-0.7.1.tar.gz -o /tmp/igraph.tar.gz \
+    && cd /tmp && tar xzf igraph.tar.gz \
+    && cd igraph-0.7.1 \
+    && ./configure \
+    && make -j$(nproc) \
+    && make install \
+    && ldconfig \
+    && rm -rf /tmp/igraph*
 
 # Install AltAnalyze and its dependencies
 RUN cd /usr/src/app \
