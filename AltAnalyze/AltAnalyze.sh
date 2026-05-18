@@ -3,7 +3,7 @@
 # Species configuration: set SPECIES_PREFIX=Hs (human) or Mm (mouse)
 # Set SPECIES_PREFIX and ENSMART_VERSION env vars before calling this script
 # For human: SPECIES_PREFIX=Hs, ENSMART_VERSION=EnsMart91 (default)
-# For mouse: SPECIES_PREFIX=Mm, ENSMART_VERSION=EnsMart100
+# For mouse: SPECIES_PREFIX=Mm, ENSMART_VERSION=EnsMart31
 SPECIES_PREFIX="${SPECIES_PREFIX:-Hs}"
 ENSMART_VERSION="${ENSMART_VERSION:-EnsMart91}"
 
