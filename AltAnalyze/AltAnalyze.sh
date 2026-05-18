@@ -7,8 +7,11 @@
 SPECIES_PREFIX="${SPECIES_PREFIX:-Hs}"
 ENSMART_VERSION="${ENSMART_VERSION:-EnsMart91}"
 
+# Capture work directory before any cd commands
+WORK_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 # process the command-line arguments
-echo "Current folder is "$PWD
+echo "Current folder is ${WORK_DIR}"
 echo "Species prefix: ${SPECIES_PREFIX}, EnsMart version: ${ENSMART_VERSION}"
 mode=$1
 
@@ -45,12 +48,12 @@ if [ "$mode" == "bam_to_bed" ]; then
     function run_BAMtoBED() {
 
     echo "start to get junction bed"
-    python ${PWD}/altanalyze/import_scripts/BAMtoJunctionBED.py --i $1 \
-        --species ${SPECIES_PREFIX} --r ${PWD}/altanalyze/AltDatabase/${ENSMART_VERSION}/ensembl/${SPECIES_PREFIX}/${SPECIES_PREFIX}_Ensembl_exon.txt
+    python ${WORK_DIR}/altanalyze/import_scripts/BAMtoJunctionBED.py --i $1 \
+        --species ${SPECIES_PREFIX} --r ${WORK_DIR}/altanalyze/AltDatabase/${ENSMART_VERSION}/ensembl/${SPECIES_PREFIX}/${SPECIES_PREFIX}_Ensembl_exon.txt
 
     echo "start to get exon bed"
-    python ${PWD}/altanalyze/import_scripts/BAMtoExonBED.py --i $1  \
-        --r ${PWD}/altanalyze/AltDatabase/${ENSMART_VERSION}/ensembl/${SPECIES_PREFIX}/${SPECIES_PREFIX}.bed --s ${SPECIES_PREFIX}
+    python ${WORK_DIR}/altanalyze/import_scripts/BAMtoExonBED.py --i $1  \
+        --r ${WORK_DIR}/altanalyze/AltDatabase/${ENSMART_VERSION}/ensembl/${SPECIES_PREFIX}/${SPECIES_PREFIX}.bed --s ${SPECIES_PREFIX}
 
     return 0
     }
@@ -63,11 +66,11 @@ elif [ "$mode" == "bed_to_junction" ]; then
     task="original"
 
     ### build necessary folder structure
-    mkdir ${PWD}/altanalyze_output
-    mkdir ${PWD}/altanalyze_output/ExpressionInput
+    mkdir ${WORK_DIR}/altanalyze_output
+    mkdir ${WORK_DIR}/altanalyze_output/ExpressionInput
 
     ### build group file
-    touch ${PWD}/altanalyze_output/ExpressionInput/groups.${task}.txt
+    touch ${WORK_DIR}/altanalyze_output/ExpressionInput/groups.${task}.txt
     cd ${bed_folder}
     count=0
     for file in *__junction.bed; do
@@ -77,26 +80,26 @@ elif [ "$mode" == "bed_to_junction" ]; then
         else
             stream+='\t2\tctl'
         fi
-        echo -e $stream >> ${PWD}/altanalyze_output/ExpressionInput/groups.${task}.txt
+        echo -e $stream >> ${WORK_DIR}/altanalyze_output/ExpressionInput/groups.${task}.txt
         ((count+=1))
     done
-    cd ${PWD}
+    cd ${WORK_DIR}
 
     ### build comp file
-    touch ${PWD}/altanalyze_output/ExpressionInput/comps.${task}.txt
-    echo -e '1\t2' > ${PWD}/altanalyze_output/ExpressionInput/comps.${task}.txt
+    touch ${WORK_DIR}/altanalyze_output/ExpressionInput/comps.${task}.txt
+    echo -e '1\t2' > ${WORK_DIR}/altanalyze_output/ExpressionInput/comps.${task}.txt
 
     ### run multipath-psi
-    python ${PWD}/altanalyze/AltAnalyze.py --species ${SPECIES_PREFIX} --platform RNASeq --version ${ENSMART_VERSION} \
+    python ${WORK_DIR}/altanalyze/AltAnalyze.py --species ${SPECIES_PREFIX} --platform RNASeq --version ${ENSMART_VERSION} \
         --bedDir ${bed_folder} \
-        --output ${PWD}/altanalyze_output \
-        --groupdir ${PWD}/altanalyze_output/ExpressionInput/groups.${task}.txt \
-        --compdir ${PWD}/altanalyze_output/ExpressionInput/comps.${task}.txt --expname ${task} \
+        --output ${WORK_DIR}/altanalyze_output \
+        --groupdir ${WORK_DIR}/altanalyze_output/ExpressionInput/groups.${task}.txt \
+        --compdir ${WORK_DIR}/altanalyze_output/ExpressionInput/comps.${task}.txt --expname ${task} \
         --runGOElite no
 
     # step3: process count matrix to only contain PSI junctions
     echo "prune the raw junction count matrix"
-    SPECIES_PREFIX="${SPECIES_PREFIX}" python "${PWD}/prune.py"
+    SPECIES_PREFIX="${SPECIES_PREFIX}" python "${WORK_DIR}/prune.py"
 
 
 # identify
@@ -105,45 +108,45 @@ elif [ "$mode" == "identify" ]; then
     function run_BAMtoBED() {
 
     echo "start to get junction bed"
-    python ${PWD}/altanalyze/import_scripts/BAMtoJunctionBED.py --i ${g_bam_folder}/$1 \
-        --species ${SPECIES_PREFIX} --r ${PWD}/altanalyze/AltDatabase/${ENSMART_VERSION}/ensembl/${SPECIES_PREFIX}/${SPECIES_PREFIX}_Ensembl_exon.txt
+    python ${WORK_DIR}/altanalyze/import_scripts/BAMtoJunctionBED.py --i ${g_bam_folder}/$1 \
+        --species ${SPECIES_PREFIX} --r ${WORK_DIR}/altanalyze/AltDatabase/${ENSMART_VERSION}/ensembl/${SPECIES_PREFIX}/${SPECIES_PREFIX}_Ensembl_exon.txt
 
     echo "start to get exon bed"
-    python ${PWD}/altanalyze/import_scripts/BAMtoExonBED.py --i ${g_bam_folder}/$1  \
-        --r ${PWD}/altanalyze/AltDatabase/${ENSMART_VERSION}/ensembl/${SPECIES_PREFIX}/${SPECIES_PREFIX}.bed --s ${SPECIES_PREFIX}
+    python ${WORK_DIR}/altanalyze/import_scripts/BAMtoExonBED.py --i ${g_bam_folder}/$1  \
+        --r ${WORK_DIR}/altanalyze/AltDatabase/${ENSMART_VERSION}/ensembl/${SPECIES_PREFIX}/${SPECIES_PREFIX}.bed --s ${SPECIES_PREFIX}
 
     return 0
     }
 
     ### collect for bam file name for parallelization
-    cd ${bam_folder}
-    for file in *.bam; do echo $file; done > ${PWD}/samples.txt
+    cd ${WORK_DIR}/${bam_folder}
+    for file in *.bam; do echo $file; done > ${WORK_DIR}/samples.txt
+    cd ${WORK_DIR}
 
     ### start to run
     export -f run_BAMtoBED
     export SPECIES_PREFIX
     export ENSMART_VERSION
     export TMPDIR=/tmp
-    export g_bam_folder=${PWD}/${bam_folder}
-    cat ${PWD}/samples.txt | parallel -P ${cores} run_BAMtoBED {}
+    export g_bam_folder=${WORK_DIR}/${bam_folder}
+    cat ${WORK_DIR}/samples.txt | parallel -P ${cores} run_BAMtoBED {}
 
     ### move bed files to bed folder
-    cd ${PWD}
-    mkdir bed
-    cd ${bam_folder}
-    for file in *.bed; do mv $file ${PWD}/bed; done
-    cd ${PWD}
+    mkdir ${WORK_DIR}/bed
+    cd ${WORK_DIR}/${bam_folder}
+    for file in *.bed; do mv $file ${WORK_DIR}/bed; done
+    cd ${WORK_DIR}
 
     # step2: multipath-psi
     task="original"
 
     ### build necessary folder structure
-    mkdir ${PWD}/altanalyze_output
-    mkdir ${PWD}/altanalyze_output/ExpressionInput
+    mkdir ${WORK_DIR}/altanalyze_output
+    mkdir ${WORK_DIR}/altanalyze_output/ExpressionInput
 
     ### build group file
-    touch ${PWD}/altanalyze_output/ExpressionInput/groups.${task}.txt
-    cd ${PWD}/bed
+    touch ${WORK_DIR}/altanalyze_output/ExpressionInput/groups.${task}.txt
+    cd ${WORK_DIR}/bed
     count=0
     for file in *__junction.bed; do
         stream=$(echo $file | sed 's/__junction.bed/.bed/g')
@@ -152,51 +155,51 @@ elif [ "$mode" == "identify" ]; then
         else
             stream+='\t2\tctl'
         fi
-        echo -e $stream >> ${PWD}/altanalyze_output/ExpressionInput/groups.${task}.txt
+        echo -e $stream >> ${WORK_DIR}/altanalyze_output/ExpressionInput/groups.${task}.txt
         ((count+=1))
     done
-    cd ${PWD}
+    cd ${WORK_DIR}
 
     ### build comp file
-    touch ${PWD}/altanalyze_output/ExpressionInput/comps.${task}.txt
-    echo -e '1\t2' > ${PWD}/altanalyze_output/ExpressionInput/comps.${task}.txt
+    touch ${WORK_DIR}/altanalyze_output/ExpressionInput/comps.${task}.txt
+    echo -e '1\t2' > ${WORK_DIR}/altanalyze_output/ExpressionInput/comps.${task}.txt
 
     ### run multipath-psi
-    python ${PWD}/altanalyze/AltAnalyze.py --species ${SPECIES_PREFIX} --platform RNASeq --version ${ENSMART_VERSION} \
-        --bedDir ${PWD}/bed \
-        --output ${PWD}/altanalyze_output \
-        --groupdir ${PWD}/altanalyze_output/ExpressionInput/groups.${task}.txt \
-        --compdir ${PWD}/altanalyze_output/ExpressionInput/comps.${task}.txt --expname ${task} \
+    python ${WORK_DIR}/altanalyze/AltAnalyze.py --species ${SPECIES_PREFIX} --platform RNASeq --version ${ENSMART_VERSION} \
+        --bedDir ${WORK_DIR}/bed \
+        --output ${WORK_DIR}/altanalyze_output \
+        --groupdir ${WORK_DIR}/altanalyze_output/ExpressionInput/groups.${task}.txt \
+        --compdir ${WORK_DIR}/altanalyze_output/ExpressionInput/comps.${task}.txt --expname ${task} \
         --runGOElite no
 
     # step3: process count matrix to only contain PSI junctions
     echo "prune the raw junction count matrix"
-    SPECIES_PREFIX="${SPECIES_PREFIX}" python "${PWD}/prune.py"
+    SPECIES_PREFIX="${SPECIES_PREFIX}" python "${WORK_DIR}/prune.py"
 
 # DE
 elif [ "$mode" == "DE" ]; then
-    python ${PWD}/altanalyze/stats_scripts/metaDataAnalysis.py --p RNASeq --s ${SPECIES_PREFIX} --adjp yes --pval 1 --f 1 \
+    python ${WORK_DIR}/altanalyze/stats_scripts/metaDataAnalysis.py --p RNASeq --s ${SPECIES_PREFIX} --adjp yes --pval 1 --f 1 \
            --i ${output_folder}/ExpressionInput/exp.original-steady-state.txt \
            --m ${group_file}
 
 # GO
 elif [ "$mode" == "GO" ]; then
     # BioMarkers
-    mkdir ${PWD}/GO_Elite_result_BioMarkers
-    python ${PWD}/altanalyze/GO_Elite.py --species ${SPECIES_PREFIX} --mod Ensembl --pval 0.05 --num 3 \
+    mkdir ${WORK_DIR}/GO_Elite_result_BioMarkers
+    python ${WORK_DIR}/altanalyze/GO_Elite.py --species ${SPECIES_PREFIX} --mod Ensembl --pval 0.05 --num 3 \
         --input ${gene_list_file} \
-        --output ${PWD}/GO_Elite_result_BioMarkers --dataToAnalyze BioMarkers
+        --output ${WORK_DIR}/GO_Elite_result_BioMarkers --dataToAnalyze BioMarkers
 
     # GO
-    mkdir ${PWD}/GO_Elite_result_GeneOntology
-    python ${PWD}/altanalyze/GO_Elite.py --species ${SPECIES_PREFIX} --mod Ensembl --pval 0.05 --num 3 \
+    mkdir ${WORK_DIR}/GO_Elite_result_GeneOntology
+    python ${WORK_DIR}/altanalyze/GO_Elite.py --species ${SPECIES_PREFIX} --mod Ensembl --pval 0.05 --num 3 \
         --input ${gene_list_file} \
-        --output ${PWD}/GO_Elite_result_GeneOntology --dataToAnalyze GeneOntology
+        --output ${WORK_DIR}/GO_Elite_result_GeneOntology --dataToAnalyze GeneOntology
 
 
 # DAS
 elif [ "$mode" == 'DAS' ]; then
-    python ${PWD}/altanalyze/stats_scripts/metaDataAnalysis.py --p PSI --dPSI 0 --pval 1 --adjp no \
+    python ${WORK_DIR}/altanalyze/stats_scripts/metaDataAnalysis.py --p PSI --dPSI 0 --pval 1 --adjp no \
         --i ${output_folder}/AltResults/AlternativeOutput/${SPECIES_PREFIX}_RNASeq_top_alt_junctions-PSI_EventAnnotation.txt \
         --m ${group_file}
 
