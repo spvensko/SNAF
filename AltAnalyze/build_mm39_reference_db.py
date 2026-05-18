@@ -154,7 +154,7 @@ def assign_subexon_ids(genes, transcripts, exons_raw):
         gene_transcript_exons[ensg][enst].append((start, end, exon_number, exon_id))
 
     exon_table_rows = []
-    intron_rows = []
+    junction_rows = []
 
     for ensg, exon_list in gene_exons.items():
         if ensg not in genes:
@@ -204,21 +204,44 @@ def assign_subexon_ids(genes, transcripts, exons_raw):
             subexon_idx = group_subexon_counter[group]
             coord_subexon[(start, end)] = f"E{group}.{subexon_idx}"
 
+        # Collect Ensembl exon IDs per unique coordinate (pipe-separated)
+        coord_ens_ids = {}
+        coord_id_sets = defaultdict(set)
+        for start, end, s, enst, enum, eid in exon_list:
+            if eid:
+                coord_id_sets[(start, end)].add(eid)
+        for coord, id_set in coord_id_sets.items():
+            sorted_ids = sorted(id_set)
+            coord_ens_ids[coord] = "|".join(sorted_ids)
+
         # Now build the exon table
         for start, end, s, enst, enum, eid in sorted_exons:
             exon_id_str = coord_subexon.get((start, end), f"E0.1")
             constitutive = "yes" if len(set((s, e) for s, e, _, _, _, _ in exon_list)) == 1 else "no"
             exon_table_rows.append((ensg, exon_id_str, chrom, strand, start, end, constitutive, eid, "", "", "False"))
 
-        # Generate intron records
+        # Generate junction records: pairs of adjacent exons connected by an intron
+        # Format: gene  E1.1-E2.1  chrom  strand  start1|start2  stop1|stop2  constitutive  eid1|eid2
         for i in range(len(unique_coords) - 1):
             end_curr = unique_coords[i][1]
             start_next = unique_coords[i + 1][0]
             if end_curr < start_next:
-                group = coord_groups[unique_coords[i]]
-                group_next = coord_groups[unique_coords[i + 1]]
-                intron_id = f"I{group}.{group_next}"
-                intron_rows.append((ensg, intron_id, chrom, strand, end_curr + 1, start_next - 1, "no", "", "", ""))
+                exon1_id = coord_subexon[unique_coords[i]]
+                exon2_id = coord_subexon[unique_coords[i + 1]]
+                junc_id = f"{exon1_id}-{exon2_id}"
+                starts = f"{unique_coords[i][0]}|{unique_coords[i + 1][0]}"
+                stops = f"{unique_coords[i][1]}|{unique_coords[i + 1][1]}"
+                ens_ids_1 = coord_ens_ids.get(unique_coords[i], "")
+                ens_ids_2 = coord_ens_ids.get(unique_coords[i + 1], "")
+                if ens_ids_1 and ens_ids_2:
+                    ens_ids = f"{ens_ids_1}|{ens_ids_2}"
+                elif ens_ids_1:
+                    ens_ids = ens_ids_1
+                elif ens_ids_2:
+                    ens_ids = ens_ids_2
+                else:
+                    ens_ids = ""
+                junction_rows.append((ensg, junc_id, chrom, strand, starts, stops, "no", ens_ids, "", ""))
 
     # Build gene_transcript_exons with new exon IDs
     gene_transcript_map = {}
@@ -231,7 +254,7 @@ def assign_subexon_ids(genes, transcripts, exons_raw):
                     exon_ids.append(coord_subexon[(start, end)])
             gene_transcript_map[ensg][enst] = " ".join(exon_ids) if exon_ids else ""
 
-    return exon_table_rows, gene_transcript_map, intron_rows
+    return exon_table_rows, gene_transcript_map, junction_rows
 
 
 def build_exon_table(exon_table_rows):
@@ -295,20 +318,16 @@ def build_altanalyze_exon_table(exon_table_rows):
     return "\n".join(lines) + "\n"
 
 
-def build_junction_table(exon_table_rows, intron_rows):
-    """Build exon-exon junction table for AltAnalyze."""
+def build_junction_table(junction_rows):
+    """Build exon-exon junction table for AltAnalyze.
+
+    Each row represents a junction between two adjacent exons with format:
+      gene  exon1_id-exon2_id  chrom  strand  start1|start2  stop1|stop2  constitutive  eid1|eid2  splice_events  splice_junctions
+    """
     lines = ["gene\texon-id\tchromosome\tstrand\texon-region-start(s)\texon-region-stop(s)\tconstitutive_call\tens_exon_ids\tsplice_events\tsplice_junctions"]
-
-    # Exon junctions
-    for row in exon_table_rows:
-        gene, exon_id, chrom, strand, start, end, constitutive, eid, se, sj, _ = row
-        lines.append(f"{gene}\t{exon_id}\t{chrom}\t{strand}\t{start}\t{end}\t{constitutive}\t{eid}\t{se}\t{sj}")
-
-    # Intron junctions
-    for row in intron_rows:
-        gene, intron_id, chrom, strand, start, end, constitutive, eid, se, sj = row
-        lines.append(f"{gene}\t{intron_id}\t{chrom}\t{strand}\t{start}\t{end}\t{constitutive}\t{eid}\t{se}\t{sj}")
-
+    for row in junction_rows:
+        gene, junc_id, chrom, strand, starts, stops, constitutive, eids, se, sj = row
+        lines.append(f"{gene}\t{junc_id}\t{chrom}\t{strand}\t{starts}\t{stops}\t{constitutive}\t{eids}\t{se}\t{sj}")
     return "\n".join(lines) + "\n"
 
 
@@ -476,8 +495,8 @@ def main():
 
     # Assign subexon IDs
     print("Assigning subexon IDs...")
-    exon_table_rows, gene_transcript_map, intron_rows = assign_subexon_ids(genes, transcripts, exons_raw)
-    print(f"  Generated {len(exon_table_rows)} exon entries, {len(intron_rows)} intron entries")
+    exon_table_rows, gene_transcript_map, junction_rows = assign_subexon_ids(genes, transcripts, exons_raw)
+    print(f"  Generated {len(exon_table_rows)} exon entries, {len(junction_rows)} junction entries")
 
     # Write mSNAF reference files
     print(f"Writing mSNAF reference files to {db_dir}...")
@@ -543,7 +562,7 @@ def main():
         f.write(alt_exon_table)
 
     # 2. Junction table
-    junction_table = build_junction_table(exon_table_rows, intron_rows)
+    junction_table = build_junction_table(junction_rows)
     with open(os.path.join(alt_db_dir, "Mm_Ensembl_junction.txt"), 'w') as f:
         f.write(junction_table)
 
