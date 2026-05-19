@@ -50,8 +50,8 @@ ENSMART_VERSION = "EnsMart31"
 GTF_URL = "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M31/gencode.vM31.primary_assembly.annotation.gtf.gz"
 FASTA_URL = "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M31/GRCm39.primary_assembly.genome.fa.gz"
 
-# GENCODE uses chr prefix, mSNAF expects unprefixed
-STRIP_CHR_PREFIX = True
+# AltAnalyze expects chr prefix in chromosome names to match BAM files
+STRIP_CHR_PREFIX = False
 
 
 def download_file(url: str, dest: str) -> None:

@@ -38,10 +38,10 @@ CHR_DIR = os.path.join(RNASEQ_DIR, "chr")
 def reformat_exon_file():
     """Reformat Mm_Ensembl_exon.txt into Mm_Ensembl_exons.txt and chr/Mm_Ensembl_exons.bed.
 
-    This replicates the logic of RNASeq.reformatExonFile(species, 'exon', chr_status=False).
+    This replicates the logic of RNASeq.reformatExonFile(species, 'exon', chr_status=True).
     Input format:  gene\texon-id\tchromosome\tstrand\tstart\tstop\tconstitutive_call\tens_exon_ids\tsplice_events\tsplice_junctions
     Output format:  AltAnalyzeID\texon_id\tensembl_gene_id\ttranscript_cluster_id\tchromosome\tstrand\tprobeset_start\tprobeset_stop\taffy_class\tconstitutive_probeset\tens_exon_ids\tens_constitutive_status\texon_region\texon-region-start(s)\texon-region-stop(s)\tsplice_events\tsplice_junctions
-    BED format:    chrom\tstart\tstop\tname\tscore\tstrand  (chrom without 'chr' prefix)
+    BED format:    chrom\tstart\tstop\tname\tscore\tstrand
     """
     input_file = os.path.join(ENSEMBL_DIR, SPECIES + "_Ensembl_exon.txt")
     output_file = os.path.join(RNASEQ_DIR, SPECIES + "_Ensembl_exons.txt")
@@ -92,9 +92,8 @@ def reformat_exon_file():
             ]
             fout.write("\t".join(out_values) + "\n")
 
-            # BED file: strip 'chr' prefix (chr_status=False in reformatExonFile)
-            bed_chrom = chrom.replace("chr", "") if chrom.startswith("chr") else chrom
-            fbed.write("\t".join([bed_chrom, start, stop, "{}_{}".format(altanalyze_id, ens_exon_ids), "0", strand]) + "\n")
+            # BED file: keep 'chr' prefix to match BAM chromosome names
+            fbed.write("\t".join([chrom, start, stop, "{}_{}".format(altanalyze_id, ens_exon_ids), "0", strand]) + "\n")
 
     line_count = sum(1 for _ in open(output_file)) - 1  # subtract header
     print("Wrote {} lines to {}".format(max(line_count, 0), output_file))
@@ -104,7 +103,7 @@ def reformat_exon_file():
 def reformat_junction_file():
     """Reformat Mm_Ensembl_junction.txt into Mm_Ensembl_junctions.txt.
 
-    This replicates the logic of RNASeq.reformatExonFile(species, 'junction', chr_status=False).
+    This replicates the logic of RNASeq.reformatExonFile(species, 'junction', chr_status=True).
     Input format:  same as exon input
     Output format: same as exon output (but no BED file)
     """
