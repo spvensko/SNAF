@@ -56,7 +56,7 @@ RUN cd /usr/src/app \
 COPY build_mm39_reference_db.py /usr/src/app/build_mm39_reference_db.py
 RUN python3 /usr/src/app/build_mm39_reference_db.py --output-dir /usr/src/app/altanalyze --skip-fasta \
     && rm -f /usr/src/app/altanalyze/gencode.vM31.primary_assembly.annotation.gtf.gz \
-    && rm -f /usr/src/app/altanalyze/Mm_Alt31_db
+    && rm -rf /usr/src/app/altanalyze/Mm_Alt31_db
 
 # Build the processed Mm RNASeq database from the generated annotations.
 # This creates AltDatabase/EnsMart31/Mm/RNASeq/ with:
