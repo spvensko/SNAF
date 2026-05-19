@@ -71,6 +71,12 @@ RUN python3 /usr/src/app/build_mm39_reference_db.py --output-dir /usr/src/app/al
 COPY build_mm_db.py /usr/src/app/build_mm_db.py
 RUN python /usr/src/app/build_mm_db.py /usr/src/app/altanalyze/AltDatabase
 
+# Symlink GO-Elite data from EnsMart91 to EnsMart31.
+# The goelite directory contains species-agnostic GO ontology annotations that
+# AltAnalyze loads during expression building (even with --runGOElite no).
+RUN cd /usr/src/app/altanalyze/AltDatabase/EnsMart31 \
+    && ln -s ../EnsMart91/goelite goelite
+
 # Patch AltAnalyze's version list to recognize EnsMart31
 # This adds: "Mus musculus\tEnsMart31\tRNASeq"
 RUN cd /usr/src/app/altanalyze \

@@ -94,6 +94,9 @@ elif [ "$mode" == "bed_to_junction" ]; then
 
     # step3: process count matrix to only contain PSI junctions
     echo "prune the raw junction count matrix"
+    if [ ! -f prune.py ]; then
+        cp /usr/src/app/prune.py .
+    fi
     SPECIES_PREFIX="${SPECIES_PREFIX}" python prune.py
 
 
@@ -163,6 +166,9 @@ elif [ "$mode" == "identify" ]; then
 
     # step3: process count matrix to only contain PSI junctions
     echo "prune the raw junction count matrix"
+    if [ ! -f prune.py ]; then
+        cp /usr/src/app/prune.py .
+    fi
     SPECIES_PREFIX="${SPECIES_PREFIX}" python prune.py
 
 # DE
