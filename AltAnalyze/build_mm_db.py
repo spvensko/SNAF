@@ -182,21 +182,30 @@ def create_domain_annotations_stub():
 
 
 def create_protein_annotations_stub():
-    """Create a minimal probeset-protein-annotations-exoncomp.txt.
+    """Create minimal probeset-protein-annotations-exoncomp.txt files.
 
     AugmentEventAnnotations.importIsoformAnnotations() reads this file
-    to add protein domain predictions to junction events. An empty file
-    (no data lines, just a newline) means no protein annotations are added,
+    to add protein domain predictions to junction events. It checks two
+    locations depending on dataType:
+      - AltDatabase/EnsMart31/Mm/RNASeq/probeset-protein-annotations-exoncomp.txt
+      - AltDatabase/EnsMart31/Mm/RNASeq/junction/probeset-protein-annotations-exoncomp.txt
+
+    An empty file (no data lines) means no protein annotations are added,
     which is acceptable for the SNAF pipeline.
     """
     output_file = os.path.join(RNASEQ_DIR, "probeset-protein-annotations-exoncomp.txt")
+    junction_dir = os.path.join(RNASEQ_DIR, "junction")
+    output_file_junction = os.path.join(junction_dir, "probeset-protein-annotations-exoncomp.txt")
 
-    print("Creating stub {}".format(output_file))
+    for path in [output_file, output_file_junction]:
+        d = os.path.dirname(path)
+        if not os.path.isdir(d):
+            os.makedirs(d)
+        print("Creating stub {}".format(path))
+        with open(path, "w") as fout:
+            fout.write("\n")
 
-    with open(output_file, "w") as fout:
-        fout.write("\n")
-
-    print("Wrote stub protein annotations file")
+    print("Wrote stub protein annotations files")
 
 
 def create_platform_file():
