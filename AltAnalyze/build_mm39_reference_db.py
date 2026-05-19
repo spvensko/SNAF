@@ -221,7 +221,9 @@ def assign_subexon_ids(genes, transcripts, exons_raw):
             exon_table_rows.append((ensg, exon_id_str, chrom, strand, start, end, constitutive, eid, "", "", "False"))
 
         # Generate junction records: pairs of adjacent exons connected by an intron
-        # Format: gene  E1.1-E2.1  chrom  strand  start1|start2  stop1|stop2  constitutive  eid1|eid2
+        # Format: gene  E1.1-E2.1  chrom  strand  E1_start|E1_stop  E2_start|E2_stop  constitutive  eid1|eid2
+        # AltAnalyze reads: exon1_start,exon1_stop = split(start,'|')
+        #                   exon2_start,exon2_stop = split(stop,'|')
         for i in range(len(unique_coords) - 1):
             end_curr = unique_coords[i][1]
             start_next = unique_coords[i + 1][0]
@@ -229,8 +231,8 @@ def assign_subexon_ids(genes, transcripts, exons_raw):
                 exon1_id = coord_subexon[unique_coords[i]]
                 exon2_id = coord_subexon[unique_coords[i + 1]]
                 junc_id = f"{exon1_id}-{exon2_id}"
-                starts = f"{unique_coords[i][0]}|{unique_coords[i + 1][0]}"
-                stops = f"{unique_coords[i][1]}|{unique_coords[i + 1][1]}"
+                starts = f"{unique_coords[i][0]}|{unique_coords[i][1]}"
+                stops = f"{unique_coords[i + 1][0]}|{unique_coords[i + 1][1]}"
                 ens_ids_1 = coord_ens_ids.get(unique_coords[i], "")
                 ens_ids_2 = coord_ens_ids.get(unique_coords[i + 1], "")
                 if ens_ids_1 and ens_ids_2:
