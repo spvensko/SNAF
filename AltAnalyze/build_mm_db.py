@@ -181,6 +181,24 @@ def create_domain_annotations_stub():
     print("Wrote stub domain annotations file (11 lines)")
 
 
+def create_protein_annotations_stub():
+    """Create a minimal probeset-protein-annotations-exoncomp.txt.
+
+    AugmentEventAnnotations.importIsoformAnnotations() reads this file
+    to add protein domain predictions to junction events. An empty file
+    (no data lines, just a newline) means no protein annotations are added,
+    which is acceptable for the SNAF pipeline.
+    """
+    output_file = os.path.join(RNASEQ_DIR, "probeset-protein-annotations-exoncomp.txt")
+
+    print("Creating stub {}".format(output_file))
+
+    with open(output_file, "w") as fout:
+        fout.write("\n")
+
+    print("Wrote stub protein annotations file")
+
+
 def create_platform_file():
     """Create platform.txt to identify this as an RNASeq database.
 
@@ -293,6 +311,7 @@ def main():
 
     # Create stub files required by AltAnalyze
     create_domain_annotations_stub()
+    create_protein_annotations_stub()
     create_platform_file()
     create_junction_comps_stub()
     create_junction_comps_updated()
