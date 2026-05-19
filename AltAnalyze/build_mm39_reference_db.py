@@ -287,12 +287,26 @@ def build_start_codon_table(start_codons, genes):
 
 
 def build_annotations(genes, transcripts, gene_transcript_map):
-    """Build gene annotation files for AltAnalyze."""
-    # Mm_Ensembl-annotations.txt: gene_id, gene_name
-    ann_lines = ["gene_id\tgene_name"]
+    """Build gene annotation files for AltAnalyze.
+
+    Mm_Ensembl-annotations.txt: 4 columns (gene_id, description, gene_name, rna_processing)
+    Mm_Ensembl-annotations_simple.txt: 3 columns (gene_id, description, gene_name)
+    AltAnalyze reads _simple.txt via importGeneAnnotations() during expression building,
+    then writes _annotations.txt via exportEnsemblAnnotations() with RNA_processing added.
+    """
+    # Mm_Ensembl-annotations.txt: gene_id, description, gene_name, rna_processing
+    ann_lines = ["gene_id\tdescription\tgene_name\trna_processing"]
     for ensg in sorted(genes.keys()):
         chrom, start, end, strand, gene_name = genes[ensg]
-        ann_lines.append(f"{ensg}\t{gene_name}")
+        description = gene_name  # GENCODE GTF has no separate description field
+        ann_lines.append(f"{ensg}\t{description}\t{gene_name}\t")
+
+    # Mm_Ensembl-annotations_simple.txt: gene_id, description, gene_name
+    ann_simple_lines = ["Ensembl Gene ID\tDescription\tGene name"]
+    for ensg in sorted(genes.keys()):
+        chrom, start, end, strand, gene_name = genes[ensg]
+        description = gene_name
+        ann_simple_lines.append(f"{ensg}\t{description}\t{gene_name}")
 
     # Mm_Ensembl_transcript-annotations.txt: gene_id, transcript_id, transcript_name, exon_ids
     trans_ann_lines = ["gene_id\ttranscript_id\ttranscript_name\texon_ids"]
@@ -306,7 +320,7 @@ def build_annotations(genes, transcripts, gene_transcript_map):
         ensg, chrom, start, end, strand, biotype = transcripts[enst]
         bio_lines.append(f"{ensg}\t{enst}\t{biotype}")
 
-    return "\n".join(ann_lines) + "\n", "\n".join(trans_ann_lines) + "\n", "\n".join(bio_lines) + "\n"
+    return "\n".join(ann_lines) + "\n", "\n".join(ann_simple_lines) + "\n", "\n".join(trans_ann_lines) + "\n", "\n".join(bio_lines) + "\n"
 
 
 def build_altanalyze_exon_table(exon_table_rows):
@@ -566,10 +580,12 @@ def main():
     with open(os.path.join(alt_db_dir, "Mm_Ensembl_junction.txt"), 'w') as f:
         f.write(junction_table)
 
-    # 3-5. Annotation files
-    ann, trans_ann, bio = build_annotations(genes, transcripts, gene_transcript_map)
+    # 3-6. Annotation files
+    ann, ann_simple, trans_ann, bio = build_annotations(genes, transcripts, gene_transcript_map)
     with open(os.path.join(alt_db_dir, "Mm_Ensembl-annotations.txt"), 'w') as f:
         f.write(ann)
+    with open(os.path.join(alt_db_dir, "Mm_Ensembl-annotations_simple.txt"), 'w') as f:
+        f.write(ann_simple)
     with open(os.path.join(alt_db_dir, "Mm_Ensembl_transcript-annotations.txt"), 'w') as f:
         f.write(trans_ann)
     with open(os.path.join(alt_db_dir, "Mm_Ensembl_transcript-biotypes.txt"), 'w') as f:
