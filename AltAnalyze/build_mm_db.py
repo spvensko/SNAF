@@ -160,25 +160,28 @@ def reformat_junction_file():
 
 
 def create_domain_annotations_stub():
-    """Create a minimal probeset-domain-annotations-exoncomp.txt.
+    """Create minimal probeset-domain-annotations-exoncomp.txt stubs.
 
     checkForLocalArraySupport() requires this file to have >9 lines.
-    The content is parsed by importGeneric() which reads tab-delimited lines.
-    An empty/invalid file (beyond the header) just means no domain annotations
-    are loaded, which is acceptable for the SNAF pipeline.
+    importIsoformAnnotations() checks two locations depending on dataType:
+      - AltDatabase/EnsMart31/Mm/RNASeq/probeset-domain-annotations-exoncomp.txt
+      - AltDatabase/EnsMart31/Mm/RNASeq/junction/probeset-domain-annotations-exoncomp.txt
     """
-    output_file = os.path.join(RNASEQ_DIR, "probeset-domain-annotations-exoncomp.txt")
+    junction_dir = os.path.join(RNASEQ_DIR, "junction")
+    if not os.path.isdir(junction_dir):
+        os.makedirs(junction_dir)
 
-    print("Creating stub {}".format(output_file))
+    for output_dir in [RNASEQ_DIR, junction_dir]:
+        output_file = os.path.join(output_dir, "probeset-domain-annotations-exoncomp.txt")
+        print("Creating stub {}".format(output_file))
+        with open(output_file, "w") as fout:
+            # Header line (imported as dbase['title'])
+            fout.write("ProbesetID\tDomainID\tDomainDescription\tAlignmentStart\tAlignmentStop\n")
+            # 10 dummy lines to pass the >9 lines check
+            for i in range(10):
+                fout.write("dummy_probeset_{}\tdummy_domain\tNo domain annotation available\t0\t0\n".format(i))
 
-    with open(output_file, "w") as fout:
-        # Header line (imported as dbase['title'])
-        fout.write("ProbesetID\tDomainID\tDomainDescription\tAlignmentStart\tAlignmentStop\n")
-        # 10 dummy lines to pass the >9 lines check
-        for i in range(10):
-            fout.write("dummy_probeset_{}\tdummy_domain\tNo domain annotation available\t0\t0\n".format(i))
-
-    print("Wrote stub domain annotations file (11 lines)")
+    print("Wrote stub domain annotations files (11 lines each)")
 
 
 def create_protein_annotations_stub():
