@@ -281,7 +281,7 @@ def build_transcript_db(gene_transcript_map, genes):
 
 def build_start_codon_table(start_codons, genes):
     """Build start codon position table."""
-    lines = ["start_codon\tnon_redundant"]
+    lines = ["\tstart_codon\tnon_redundant"]
     for ensg in sorted(start_codons.keys()):
         positions = sorted(start_codons[ensg])
         lines.append(f"{ensg}\t{positions}")
