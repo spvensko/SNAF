@@ -95,5 +95,3 @@ COPY prune.py /usr/src/app/prune.py
 RUN chmod 777 /usr/src/app/prune.py \
     && chmod 777 /usr/src/app/AltAnalyze.sh \
     && chmod -R 777 /usr/src/app/altanalyze
-
-ENTRYPOINT ["/usr/src/app/AltAnalyze.sh"]
